@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="一会去哪儿 — 结合天气、兴趣、预算、交通，一键生成个性化出游方案">
+  <meta name="theme-color" content="#C65D3A">
+  <title>一会去哪儿 · 个性化出游推荐</title>
+
+  <!-- 字体预加载 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500;1,9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- 样式 -->
+  <link rel="stylesheet" href="css/tokens.css?v=16">
+  <link rel="stylesheet" href="css/base.css?v=16">
+  <link rel="stylesheet" href="css/layout.css?v=16">
+  <link rel="stylesheet" href="css/components.css?v=16">
+  <link rel="stylesheet" href="css/motion.css?v=16">
+
+  <!-- 动效库 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
+
+  <!-- 内联首屏样式（避免 FOUC） -->
+  <style>
+    #app:empty::before {
+      content: '加载中…';
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: #6B6258;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <!-- AOS 滚动动画库 JS -->
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+  <!-- 应用脚本（ES Module） -->
+  <script type="module" src="js/app.js"></script>
+  <script>
+    // 注册 Service Worker 绕过 ES module 缓存
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').then(() => {
+        console.log('[SW] 已注册，JS/CSS 缓存已绕过');
+      }).catch(err => console.warn('[SW] 注册失败:', err));
+    }
+  </script>
+</body>
+</html>
