@@ -2929,20 +2929,21 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  animation: m3-progress-spin 1.6s var(--ease-standard) infinite;
+  /* M3 indeterminate circular progress：匀速旋转，无 dashoffset 变化 */
+  animation: m3-progress-spin 1.4s linear infinite;
 }
 
-/* 进度环的指示弧（第二层 circle）跟随旋转 */
+/* 进度环的指示弧（第二层 circle）：固定缺口，仅随 ring 旋转，不做独立动画 */
 .m3-progress-logo__ring circle:last-child {
-  animation: m3-progress-arc 2.4s var(--ease-standard) infinite;
-  transform-origin: 40px 40px;
+  /* stroke-dasharray 在 SVG 上设定，此处不覆盖，保持固定弧长 */
 }
 
 .m3-progress-logo__icon {
   position: relative;
   z-index: 1;
   color: var(--color-primary);
-  animation: m3-logo-spin 2.4s var(--ease-standard) infinite;
+  /* Logo 与环同步匀速旋转 */
+  animation: m3-progress-spin 1.4s linear infinite;
 }
 
 .m3-progress-logo__icon--openai {
@@ -2950,17 +2951,6 @@
 }
 
 @keyframes m3-progress-spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-@keyframes m3-progress-arc {
-  0% { stroke-dashoffset: 0; }
-  50% { transform: rotate(135deg); }
-  100% { transform: rotate(360deg); stroke-dashoffset: 0; }
-}
-
-@keyframes m3-logo-spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
@@ -3007,7 +2997,6 @@
   .shimmer-text,
   .m3-linear-progress--indeterminate .m3-linear-progress__indicator,
   .m3-progress-logo__ring,
-  .m3-progress-logo__ring circle:last-child,
   .m3-progress-logo__icon {
     animation: none;
   }
