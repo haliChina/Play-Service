@@ -11,7 +11,7 @@
   background: var(--color-surface-container-low);
   backdrop-filter: blur(20px) saturate(1.6);
   -webkit-backdrop-filter: blur(20px) saturate(1.6);
-  border-bottom: 1px solid rgba(42, 37, 32, 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   box-shadow: var(--shadow-xs);
 }
 
@@ -73,7 +73,7 @@
   gap: var(--space-2xs);
   padding: var(--space-xs) var(--space-md);
   background: var(--color-surface-container-high);
-  border: 1px solid rgba(42, 37, 32, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: var(--radius-pill);
   font-size: var(--text-small);
   font-weight: var(--weight-medium);
@@ -282,7 +282,7 @@
   padding: var(--space-xl);
   background: var(--color-surface);
   border-radius: var(--radius-lg);
-  border: 1px solid rgba(42, 37, 32, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
   box-shadow: var(--shadow-sm);
   transition: box-shadow var(--transition-normal);
 }
@@ -476,7 +476,7 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-overlay);
-  background: rgba(42, 37, 32, 0.5);
+  background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   opacity: 0;
@@ -556,7 +556,7 @@
   text-align: center;
   font-size: var(--text-tiny);
   color: var(--color-text-faint);
-  border-top: 1px solid rgba(42, 37, 32, 0.06);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
   margin-top: var(--space-4xl);
 }
 
