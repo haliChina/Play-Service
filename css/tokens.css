@@ -1,76 +1,76 @@
 /* ============================================
-   设计令牌 — 浓郁 Material 3 (M3) Design
+   设计令牌 — Vercel 配色（极简黑白 + 蓝色强调）
    一会去哪儿 · Design Tokens
-   融合 M3 Tonal 色阶 / State Layer / Elevation
+   黑白高对比 / 几何感 / 中性灰阶
    ============================================ */
 
 :root {
-  /* ── M3 Primary 色阶（陶土橙 tonal） ── */
-  --color-primary: #BA4A00;
-  --color-primary-deep: #8C3700;
-  --color-primary-soft: #F4B8A0;
-  --color-primary-tint: #FAE3D8;
+  /* ── Vercel Primary 色阶（纯黑主色） ── */
+  --color-primary: #000000;
+  --color-primary-deep: #000000;
+  --color-primary-soft: #666666;
+  --color-primary-tint: #fafafa;
 
-  /* M3 on / container 语义 */
+  /* on / container 语义 */
   --color-on-primary: #FFFFFF;
   --color-on-primary-deep: #FFFFFF;
-  --color-primary-container: #FFDBCC;
-  --color-on-primary-container: #3A0B00;
-  --color-primary-container-soft: #FFEDE3;
+  --color-primary-container: #fafafa;
+  --color-on-primary-container: #171717;
+  --color-primary-container-soft: #f5f5f5;
 
-  /* ── M3 Secondary 色阶（鼠尾草绿 tonal） ── */
-  --color-secondary: #5C6156;
-  --color-secondary-deep: #3C4138;
-  --color-secondary-soft: #C5C9BB;
-  --color-secondary-container: #E1E4D8;
-  --color-on-secondary-container: #191E15;
-  --color-secondary-container-soft: #EFF1E7;
+  /* ── Vercel Secondary 色阶（中性灰） ── */
+  --color-secondary: #666666;
+  --color-secondary-deep: #444444;
+  --color-secondary-soft: #999999;
+  --color-secondary-container: #fafafa;
+  --color-on-secondary-container: #171717;
+  --color-secondary-container-soft: #f5f5f5;
 
-  /* ── M3 Tertiary 色阶（芥末黄 tonal，强调） ── */
-  --color-accent: #855200;
-  --color-accent-deep: #5E3900;
-  --color-accent-soft: #FFDDB7;
-  --color-tertiary-container: #FFDDB7;
-  --color-on-tertiary-container: #2B1700;
+  /* ── Vercel Tertiary 色阶（蓝色强调 #0070f3） ── */
+  --color-accent: #0070f3;
+  --color-accent-deep: #0061d5;
+  --color-accent-soft: #d0e4ff;
+  --color-tertiary-container: #0070f3;
+  --color-on-tertiary-container: #FFFFFF;
 
-  /* ── M3 Error 色阶 ── */
-  --color-error: #BA1A1A;
-  --color-error-container: #FFDAD6;
-  --color-on-error-container: #410002;
+  /* ── Error 色阶（Vercel 红 #ee0000） ── */
+  --color-error: #ee0000;
+  --color-error-container: #ffeaea;
+  --color-on-error-container: #7a0000;
 
-  /* ── M3 Surface 色阶（暖奶油基底 + tonal 提升层级） ── */
-  --color-bg: #FCF9F4;
-  --color-bg-warm: #F6F0E6;
-  --color-bg-deep: #EDE3D3;
+  /* ── Vercel Surface 色阶（纯白基底 + 中性灰层级） ── */
+  --color-bg: #FFFFFF;
+  --color-bg-warm: #fafafa;
+  --color-bg-deep: #f5f5f5;
   --color-surface: #FFFFFF;
-  --color-surface-elevated: #FFFDF9;
-  --color-surface-sunk: #F2EBE0;
-  --color-surface-dim: #E8DFD0;
-  --color-surface-bright: #FFFCF6;
+  --color-surface-elevated: #FFFFFF;
+  --color-surface-sunk: #fafafa;
+  --color-surface-dim: #f5f5f5;
+  --color-surface-bright: #FFFFFF;
 
-  /* Surface 变体（M3 中表达层级用 tint 叠加） */
-  --color-surface-variant: #F0E6D6;
-  --color-on-surface-variant: #514538;
+  /* Surface 变体（中性灰阶表达层级） */
+  --color-surface-variant: #f5f5f5;
+  --color-on-surface-variant: #666666;
   --color-surface-container-lowest: #FFFFFF;
-  --color-surface-container-low: #FBF5EC;
-  --color-surface-container: #F5EFE4;
-  --color-surface-container-high: #F0E9DC;
-  --color-surface-container-highest: #EAE3D3;
+  --color-surface-container-low: #fafafa;
+  --color-surface-container: #f5f5f5;
+  --color-surface-container-high: #ededed;
+  --color-surface-container-highest: #eaeaea;
 
-  /* ── 文字：暖炭灰，不用纯黑 ── */
-  --color-text: #2A2520;
-  --color-text-muted: #5E564B;
-  --color-text-faint: #948B7E;
-  --color-text-inverse: #FFFBF5;
+  /* ── 文字：Vercel neutral-900 / 600 / 400 ── */
+  --color-text: #171717;
+  --color-text-muted: #666666;
+  --color-text-faint: #999999;
+  --color-text-inverse: #FFFFFF;
 
-  /* ── 功能色 ── */
-  --color-good: #3C6B2B;
-  --color-good-container: #BDF29C;
-  --color-warn: #855200;
-  --color-warn-container: #FFDDB7;
-  --color-info: #2E5A88;
-  --color-info-container: #D0E4FF;
-  --color-danger: #BA1A1A;
+  /* ── 功能色（Vercel 风） ── */
+  --color-good: #0070f3;
+  --color-good-container: #d0e4ff;
+  --color-warn: #f5a623;
+  --color-warn-container: #fff3d6;
+  --color-info: #0070f3;
+  --color-info-container: #d0e4ff;
+  --color-danger: #ee0000;
 
   /* ── 天气动态色（JS 根据天气切换 --weather-tint） ── */
   --weather-sunny: #E89B17;
@@ -140,20 +140,20 @@
   --radius-pill: 9999px;
   --radius-circle: 50%;
 
-  /* ── M3 Elevation 阴影（更明显的层级感） ── */
-  --shadow-xs: 0 1px 2px rgba(42, 37, 32, 0.08);
-  --shadow-sm: 0 1px 3px rgba(42, 37, 32, 0.10), 0 1px 2px rgba(42, 37, 32, 0.08);
-  --shadow-md: 0 3px 6px rgba(42, 37, 32, 0.10), 0 2px 4px rgba(42, 37, 32, 0.08);
-  --shadow-lg: 0 8px 24px rgba(42, 37, 32, 0.12), 0 4px 8px rgba(42, 37, 32, 0.08);
-  --shadow-xl: 0 16px 40px rgba(42, 37, 32, 0.16), 0 8px 16px rgba(42, 37, 32, 0.10);
-  --shadow-2xl: 0 24px 56px rgba(42, 37, 32, 0.20), 0 12px 24px rgba(42, 37, 32, 0.12);
+  /* ── Vercel Elevation 阴影（中性灰，干净利落） ── */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 3px 6px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.10), 0 4px 8px rgba(0, 0, 0, 0.06);
+  --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.14), 0 8px 16px rgba(0, 0, 0, 0.08);
+  --shadow-2xl: 0 24px 56px rgba(0, 0, 0, 0.18), 0 12px 24px rgba(0, 0, 0, 0.10);
 
-  /* M3 温暖色调强调阴影 */
-  --shadow-warm: 0 8px 24px rgba(186, 74, 0, 0.22), 0 4px 12px rgba(186, 74, 0, 0.14);
-  --shadow-warm-lg: 0 16px 40px rgba(186, 74, 0, 0.28), 0 8px 20px rgba(186, 74, 0, 0.18);
+  /* 强调阴影（蓝色调，Vercel 风） */
+  --shadow-warm: 0 8px 24px rgba(0, 112, 243, 0.18), 0 4px 12px rgba(0, 112, 243, 0.12);
+  --shadow-warm-lg: 0 16px 40px rgba(0, 112, 243, 0.24), 0 8px 20px rgba(0, 112, 243, 0.16);
 
-  --shadow-inset: inset 0 1px 2px rgba(42, 37, 32, 0.08);
-  --shadow-focus: 0 0 0 3px rgba(186, 74, 0, 0.32);
+  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-focus: 0 0 0 3px rgba(0, 112, 243, 0.32);
 
   /* ── M3 State Layer 透明度叠加 ── */
   --state-layer-hover: 0.08;
