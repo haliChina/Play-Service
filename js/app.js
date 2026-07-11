@@ -562,14 +562,35 @@ async function runAIFlow(needs, address) {
     }
   };
 
+  // 流式增量 DOM 更新：只改 <pre> 文本节点，避免整树 innerHTML 重建导致页面抽搐
+  const updateStreamDom = (fullContent) => {
+    const trace = document.getElementById('agentTrace');
+    if (!trace) { updateAgentView(); return; }
+    const streamPres = trace.querySelectorAll('.agent-step__stream');
+    const lastPre = streamPres[streamPres.length - 1];
+    if (lastPre) {
+      const preview = fullContent.length > 600 ? fullContent.slice(0, 600) + ' …' : fullContent;
+      // textContent 自动转义，且不触发整树重排
+      lastPre.textContent = preview;
+      // 仅当用户已在底部附近时自动滚动，避免抢占用户滚动位置
+      const nearBottom = trace.scrollHeight - trace.scrollTop - trace.clientHeight < 80;
+      if (nearBottom) trace.scrollTop = trace.scrollHeight;
+    } else {
+      // stream 步骤尚未渲染（首帧），降级到全量渲染
+      updateAgentView();
+    }
+  };
+
   // 流式渲染节流：rAF 合并多次 stream_update 为单次重绘，避免逐字重排卡顿
   let streamRenderQueued = false;
-  const scheduleStreamRender = () => {
+  let pendingStreamContent = '';
+  const scheduleStreamRender = (content) => {
+    pendingStreamContent = content;
     if (streamRenderQueued) return;
     streamRenderQueued = true;
     requestAnimationFrame(() => {
       streamRenderQueued = false;
-      updateAgentView();
+      updateStreamDom(pendingStreamContent);
     });
   };
 
@@ -590,7 +611,7 @@ async function runAIFlow(needs, address) {
         if (last && last.type === 'stream') {
           last.content = step.content;
         }
-        scheduleStreamRender();
+        scheduleStreamRender(step.content);
         return;
       }
       agentSteps.push(step);
