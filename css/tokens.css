@@ -1,0 +1,208 @@
+/* ============================================
+   设计令牌 — 浓郁 Material 3 (M3) Design
+   一会去哪儿 · Design Tokens
+   融合 M3 Tonal 色阶 / State Layer / Elevation
+   ============================================ */
+
+:root {
+  /* ── M3 Primary 色阶（陶土橙 tonal） ── */
+  --color-primary: #BA4A00;
+  --color-primary-deep: #8C3700;
+  --color-primary-soft: #F4B8A0;
+  --color-primary-tint: #FAE3D8;
+
+  /* M3 on / container 语义 */
+  --color-on-primary: #FFFFFF;
+  --color-on-primary-deep: #FFFFFF;
+  --color-primary-container: #FFDBCC;
+  --color-on-primary-container: #3A0B00;
+  --color-primary-container-soft: #FFEDE3;
+
+  /* ── M3 Secondary 色阶（鼠尾草绿 tonal） ── */
+  --color-secondary: #5C6156;
+  --color-secondary-deep: #3C4138;
+  --color-secondary-soft: #C5C9BB;
+  --color-secondary-container: #E1E4D8;
+  --color-on-secondary-container: #191E15;
+  --color-secondary-container-soft: #EFF1E7;
+
+  /* ── M3 Tertiary 色阶（芥末黄 tonal，强调） ── */
+  --color-accent: #855200;
+  --color-accent-deep: #5E3900;
+  --color-accent-soft: #FFDDB7;
+  --color-tertiary-container: #FFDDB7;
+  --color-on-tertiary-container: #2B1700;
+
+  /* ── M3 Error 色阶 ── */
+  --color-error: #BA1A1A;
+  --color-error-container: #FFDAD6;
+  --color-on-error-container: #410002;
+
+  /* ── M3 Surface 色阶（暖奶油基底 + tonal 提升层级） ── */
+  --color-bg: #FCF9F4;
+  --color-bg-warm: #F6F0E6;
+  --color-bg-deep: #EDE3D3;
+  --color-surface: #FFFFFF;
+  --color-surface-elevated: #FFFDF9;
+  --color-surface-sunk: #F2EBE0;
+  --color-surface-dim: #E8DFD0;
+  --color-surface-bright: #FFFCF6;
+
+  /* Surface 变体（M3 中表达层级用 tint 叠加） */
+  --color-surface-variant: #F0E6D6;
+  --color-on-surface-variant: #514538;
+  --color-surface-container-lowest: #FFFFFF;
+  --color-surface-container-low: #FBF5EC;
+  --color-surface-container: #F5EFE4;
+  --color-surface-container-high: #F0E9DC;
+  --color-surface-container-highest: #EAE3D3;
+
+  /* ── 文字：暖炭灰，不用纯黑 ── */
+  --color-text: #2A2520;
+  --color-text-muted: #5E564B;
+  --color-text-faint: #948B7E;
+  --color-text-inverse: #FFFBF5;
+
+  /* ── 功能色 ── */
+  --color-good: #3C6B2B;
+  --color-good-container: #BDF29C;
+  --color-warn: #855200;
+  --color-warn-container: #FFDDB7;
+  --color-info: #2E5A88;
+  --color-info-container: #D0E4FF;
+  --color-danger: #BA1A1A;
+
+  /* ── 天气动态色（JS 根据天气切换 --weather-tint） ── */
+  --weather-sunny: #E89B17;
+  --weather-cloudy: #6E8094;
+  --weather-rainy: #4F6B8C;
+  --weather-snowy: #A6BCD0;
+  --weather-overcast: #7C8791;
+  --weather-tint: var(--weather-cloudy);
+  --weather-tint-soft: rgba(110, 128, 148, 0.16);
+
+  /* ── 字体系统 ── */
+  --font-display: 'Fraunces', 'Noto Serif SC', Georgia, serif;
+  --font-body: 'Plus Jakarta Sans', 'Noto Sans SC', system-ui, sans-serif;
+  --font-numeric: 'Space Grotesk', 'Noto Sans SC', monospace;
+
+  /* ── 字号（流式自适应，M3 Type Scale） ── */
+  --text-display: clamp(3rem, 7vw, 4.5rem);
+  --text-hero: clamp(2.5rem, 6vw, 4rem);
+  --text-h1: clamp(1.75rem, 3.5vw, 2.5rem);
+  --text-h2: clamp(1.375rem, 2.5vw, 1.875rem);
+  --text-h3: 1.25rem;
+  --text-h4: 1.0625rem;
+  --text-body: 1rem;
+  --text-small: 0.875rem;
+  --text-tiny: 0.8125rem;
+  --text-micro: 0.6875rem;
+
+  /* ── 字重 ── */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* ── 行高 ── */
+  --leading-tight: 1.15;
+  --leading-snug: 1.35;
+  --leading-normal: 1.6;
+  --leading-relaxed: 1.75;
+
+  /* ── 字间距 ── */
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.02em;
+  --tracking-wider: 0.08em;
+
+  /* ── 间距系统（8px 基线） ── */
+  --space-3xs: 2px;
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  --space-4xl: 96px;
+  --space-5xl: 128px;
+
+  /* ── M3 Shape 圆角（更浓郁、更圆润） ── */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-2xl: 28px;
+  --radius-3xl: 32px;
+  --radius-pill: 9999px;
+  --radius-circle: 50%;
+
+  /* ── M3 Elevation 阴影（更明显的层级感） ── */
+  --shadow-xs: 0 1px 2px rgba(42, 37, 32, 0.08);
+  --shadow-sm: 0 1px 3px rgba(42, 37, 32, 0.10), 0 1px 2px rgba(42, 37, 32, 0.08);
+  --shadow-md: 0 3px 6px rgba(42, 37, 32, 0.10), 0 2px 4px rgba(42, 37, 32, 0.08);
+  --shadow-lg: 0 8px 24px rgba(42, 37, 32, 0.12), 0 4px 8px rgba(42, 37, 32, 0.08);
+  --shadow-xl: 0 16px 40px rgba(42, 37, 32, 0.16), 0 8px 16px rgba(42, 37, 32, 0.10);
+  --shadow-2xl: 0 24px 56px rgba(42, 37, 32, 0.20), 0 12px 24px rgba(42, 37, 32, 0.12);
+
+  /* M3 温暖色调强调阴影 */
+  --shadow-warm: 0 8px 24px rgba(186, 74, 0, 0.22), 0 4px 12px rgba(186, 74, 0, 0.14);
+  --shadow-warm-lg: 0 16px 40px rgba(186, 74, 0, 0.28), 0 8px 20px rgba(186, 74, 0, 0.18);
+
+  --shadow-inset: inset 0 1px 2px rgba(42, 37, 32, 0.08);
+  --shadow-focus: 0 0 0 3px rgba(186, 74, 0, 0.32);
+
+  /* ── M3 State Layer 透明度叠加 ── */
+  --state-layer-hover: 0.08;
+  --state-layer-focus: 0.12;
+  --state-layer-pressed: 0.12;
+  --state-layer-dragged: 0.16;
+
+  /* ── M3 标准 Emphasis 动效曲线 ── */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-standard-decelerate: cubic-bezier(0, 0, 0, 1);
+  --ease-standard-accelerate: cubic-bezier(0.3, 0, 1, 1);
+  --ease-emphasized: cubic-bezier(0.3, 0, 0, 1);
+  --ease-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ease-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+  /* 兼容旧引用 */
+  --ease-out: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* ── 动效时长 ── */
+  --duration-instant: 80ms;
+  --duration-fast: 150ms;
+  --duration-short: 200ms;
+  --duration-medium: 300ms;
+  --duration-normal: 250ms;
+  --duration-long: 450ms;
+  --duration-slow: 400ms;
+  --duration-slower: 600ms;
+  --duration-grand: 800ms;
+
+  /* ── 层级 ── */
+  --z-base: 1;
+  --z-raised: 10;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-overlay: 500;
+  --z-drawer: 600;
+  --z-toast: 700;
+  --z-modal: 1000;
+
+  /* ── 布局 ── */
+  --container-max: 1200px;
+  --container-narrow: 760px;
+  --container-padding: clamp(1rem, 4vw, 2.5rem);
+  --header-height: 72px;
+
+  /* ── 过渡（使用 M3 标准） ── */
+  --transition-fast: var(--duration-fast) var(--ease-standard-decelerate);
+  --transition-normal: var(--duration-short) var(--ease-standard);
+  --transition-slow: var(--duration-long) var(--ease-emphasized-decelerate);
+}
