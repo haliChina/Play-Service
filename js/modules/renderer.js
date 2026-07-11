@@ -4,6 +4,7 @@
 // ============================================
 
 import { getIcon } from './icons.js';
+import { m3LoaderHTML } from './m3Loader.js';
 import { appState } from './state.js';
 import {
   groupTypes, interestOptions, transportOptions,
@@ -1220,12 +1221,11 @@ export function renderAIProcessing(step = '') {
     <section class="view is-active generating" id="view-generating" data-view="generating">
       <div class="container">
         <div class="generating__canvas-wrap">
-          <div class="generating__fallback compass-spin" style="display:block">
-            <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
-          </div>
+          ${m3LoaderHTML(80, 'm3LoaderGenerating')}
         </div>
         <h2 class="generating__title">AI 正在为你规划</h2>
         <p class="generating__subtitle">${step || '正在处理…'}</p>
+        <div class="m3-linear-progress m3-linear-progress--indeterminate" aria-hidden="true"><div class="m3-linear-progress__indicator"></div></div>
         <div class="ai-steps">
           ${steps.map((s, i) => `
             <div class="ai-step ${i < stepIndex ? 'is-done' : ''} ${i === stepIndex ? 'is-active' : ''}">
@@ -1459,20 +1459,19 @@ function getOpenAILogoSVG(size = 64) {
 function renderThinkingHeader(currentStatus) {
   const useOpenAI = shouldUseOpenAILogo();
   if (useOpenAI) {
-    // OpenAI Logo 沿图标中心转圈
+    // M3 Expressive 异形加载指示器 + OpenAI Logo 叠加
     return `
-      <div class="thinking-logo thinking-logo--openai" role="img" aria-label="OpenAI 模型正在思考">
-        <div class="thinking-logo__ring"></div>
-        <div class="thinking-logo__icon">${getOpenAILogoSVG(40)}</div>
+      <div class="thinking-logo thinking-logo--m3" role="img" aria-label="AI 正在思考">
+        ${m3LoaderHTML(64, 'm3LoaderAgent')}
       </div>
       <h2 class="generating__title">Agent 正在为你规划</h2>
       <p class="generating__subtitle shimmer-text" aria-live="polite">${currentStatus}</p>
     `;
   }
-  // 默认：带 Shimmer 动画的 "Thinking" 文字
+  // M3 Expressive 异形加载指示器
   return `
-    <div class="thinking-logo thinking-logo--default" role="img" aria-label="AI 正在思考">
-      <div class="thinking-logo__pulse"></div>
+    <div class="thinking-logo thinking-logo--m3" role="img" aria-label="AI 正在思考">
+      ${m3LoaderHTML(64, 'm3LoaderAgent')}
     </div>
     <h2 class="generating__title shimmer-text" aria-live="polite">Thinking</h2>
     <p class="generating__subtitle">${currentStatus}</p>
