@@ -27,7 +27,6 @@ import { parseUserNeeds, generateRecommendations, testLLMConnection, LLM_PRESETS
 import { runLocalAgent } from './services/localAgent.js';
 import { parseTravelIntent, buildIntentSummary } from './services/intentParser.js';
 import { getIcon } from './modules/icons.js';
-import { mountM3Loader, unmountM3Loader, unmountAllM3Loaders } from './modules/m3Loader.js';
 
 // ── 初始化应用 ──
 function initApp() {
@@ -211,8 +210,6 @@ function handleNavigation(view) {
   }
 
   setTimeout(() => {
-    // 视图切换前清理所有 M3 LoadingIndicator
-    unmountAllM3Loaders();
     switch (view) {
       case 'hero':
         renderHeroView();
@@ -246,9 +243,6 @@ function renderGeneratingView() {
   const view = main.querySelector('.view');
   if (view) view.classList.add('is-active');
   bindGeneratingEvents();
-  // 挂载 M3 Expressive 异形加载指示器
-  const m3Canvas = document.getElementById('m3LoaderGenerating');
-  if (m3Canvas) mountM3Loader(m3Canvas, { size: 80 });
 }
 
 function renderResultsViewDirect() {
@@ -559,9 +553,6 @@ async function runAIFlow(needs, address) {
 
   const updateAgentView = () => {
     main.innerHTML = renderAgentProcessing(agentSteps, currentStatus);
-    // 挂载 M3 Expressive 异形加载指示器（每次重建后重新挂载）
-    const m3Canvas = document.getElementById('m3LoaderAgent');
-    if (m3Canvas) mountM3Loader(m3Canvas, { size: 64 });
     // 自动滚动到 Agent 轨迹底部，展示最新步骤
     const trace = document.getElementById('agentTrace');
     if (trace) {
@@ -668,7 +659,6 @@ async function runAIFlow(needs, address) {
 
     // 渲染 Agent 结果
     appState.setResults(plan.recommendations || []);
-    unmountAllM3Loaders(); // 清理 M3 LoadingIndicator
     main.innerHTML = renderAgentResults(plan, toolCalls, address);
     const view = main.querySelector('.view');
     if (view) view.classList.add('is-active');

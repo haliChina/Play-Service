@@ -93,7 +93,7 @@ vercel dev
 | 图片搜索 | 360 图片搜索 + 必应图片 async API + Wikimedia |
 | AI 推荐 | 用户自定义（硅基流动/DeepSeek/智谱等） |
 | 流式输出 | OpenAI SSE 流式协议 + 增量 DOM patch |
-| 加载指示器 | M3 Expressive LoadingIndicator（7 种异形多边形 spring morphing） |
+| 加载指示器 | M3 Circular Progress（圆头缺口环 + Logo 同步旋转） |
 | 视觉确认 | OpenAI Vision 多模态（image_url + detail:low） |
 | 天气 | wttr.in（免费） |
 | 部署 | Vercel（Serverless Functions + SSE 透传） |
