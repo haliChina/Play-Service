@@ -2868,6 +2868,56 @@
   100% { background-position: -200% 0; }
 }
 
+/* M3 Expressive 异形加载指示器容器 */
+.thinking-logo--m3 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.m3-loader {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.m3-loader canvas {
+  display: block;
+}
+
+/* M3 Linear Progress（AI 步骤进度条） */
+.m3-linear-progress {
+  position: relative;
+  width: 100%;
+  height: 4px;
+  background: var(--color-surface-container-highest);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 12px 0;
+}
+
+.m3-linear-progress__indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 2px;
+  transition: width var(--duration-normal) var(--ease-emphasized);
+}
+
+.m3-linear-progress--indeterminate .m3-linear-progress__indicator {
+  width: 40%;
+  animation: m3-linear-indeterminate 1.8s var(--ease-standard) infinite;
+}
+
+@keyframes m3-linear-indeterminate {
+  0% { left: -40%; width: 40%; }
+  50% { left: 30%; width: 50%; }
+  100% { left: 100%; width: 40%; }
+}
+
 /* 尊重用户的 reduced-motion 偏好 */
 @media (prefers-reduced-motion: reduce) {
   .thinking-logo--default .thinking-logo__pulse,
@@ -2875,7 +2925,8 @@
   .thinking-logo--default::after,
   .thinking-logo--openai .thinking-logo__ring,
   .thinking-logo--openai::before,
-  .shimmer-text {
+  .shimmer-text,
+  .m3-linear-progress--indeterminate .m3-linear-progress__indicator {
     animation: none;
   }
   .shimmer-text {
