@@ -4,7 +4,7 @@
 
 **一会去哪儿** 是一个个性化出游推荐 Web 应用。输入"想带女朋友去个安静的地方散步"，它就能结合你的位置、实时天气、预算，从地图上真实的地点里给你挑出最合适的，一键导航出发。
 
-界面采用 **Vercel 极简配色**（黑白高对比 + 蓝色强调），支持 **流式输出** 实时展示 AI 推理过程，并通过 **多模态视觉理解** 对景点配图进行真实校验。全程用 [TRAE](https://www.trae.cn/) 完成开发，参加了 TRAE AI 创造力大赛。
+界面采用 **Material 3 (M3 Expressive) 组件形态 + Vercel 极简配色**（黑白高对比 + #0070f3 蓝色强调），图标为 M3 Symbols 风格，支持 **流式输出** 实时展示 AI 推理过程，并通过 **多模态视觉理解** 对景点配图进行真实校验。全程用 [TRAE](https://www.trae.cn/) 完成开发，参加了 TRAE AI 创造力大赛。
 
 ---
 
@@ -87,7 +87,8 @@ vercel dev
 | 层 | 技术 |
 |------|------|
 | 前端 | 原生 JavaScript + CSS（无框架） |
-| 设计 | Vercel 极简配色（黑白 + #0070f3 蓝色强调） |
+| 设计 | Material 3 (M3 Expressive) 组件 + Vercel 配色（黑白 + #0070f3） |
+| 图标 | M3 Symbols 风格（圆角 rounded） |
 | 地图数据 | OpenStreetMap / Overpass API / Nominatim |
 | 图片搜索 | 360 图片搜索 + 必应图片 async API + Wikimedia |
 | AI 推荐 | 用户自定义（硅基流动/DeepSeek/智谱等） |
