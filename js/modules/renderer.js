@@ -4,7 +4,6 @@
 // ============================================
 
 import { getIcon } from './icons.js';
-import { m3LoaderHTML } from './m3Loader.js';
 import { appState } from './state.js';
 import {
   groupTypes, interestOptions, transportOptions,
@@ -1221,7 +1220,7 @@ export function renderAIProcessing(step = '') {
     <section class="view is-active generating" id="view-generating" data-view="generating">
       <div class="container">
         <div class="generating__canvas-wrap">
-          ${m3LoaderHTML(80, 'm3LoaderGenerating')}
+          ${renderM3ProgressLogo(96)}
         </div>
         <h2 class="generating__title">AI 正在为你规划</h2>
         <p class="generating__subtitle">${step || '正在处理…'}</p>
@@ -1454,27 +1453,42 @@ function getOpenAILogoSVG(size = 64) {
 }
 
 /**
- * 渲染 Thinking 头部（带 Shimmer 文字动画 或 OpenAI Logo 转圈）
+ * M3 Circular Progress + Logo 组件
+ * M3 风格圆形进度环（圆头 stroke + 缺口 indeterminate 旋转）环绕 Logo，
+ * Logo 本身同步旋转。OpenAI 模型使用 OpenAI 六瓣花 logo，否则用 compass 图标。
+ * 纯 SVG/CSS 实现，无 CDN 依赖，高对比度。
+ */
+function renderM3ProgressLogo(size = 80) {
+  const useOpenAI = shouldUseOpenAILogo();
+  const logoSvg = useOpenAI
+    ? getOpenAILogoSVG(40)
+    : getIcon('compass', 40);
+  const logoClass = useOpenAI ? 'm3-progress-logo__icon m3-progress-logo__icon--openai' : 'm3-progress-logo__icon';
+  // M3 Circular Progress：圆周 C=2πr，留 25% 缺口
+  const r = 34;
+  const C = 2 * Math.PI * r;
+  const dash = C * 0.75; // 75% 弧 + 25% 缺口
+  return `
+    <div class="m3-progress-logo" style="--m3-size:${size}px" role="img" aria-label="AI 正在思考">
+      <svg class="m3-progress-logo__ring" viewBox="0 0 80 80" fill="none">
+        <circle cx="40" cy="40" r="${r}" stroke="var(--color-surface-container-high)" stroke-width="4" />
+        <circle cx="40" cy="40" r="${r}" stroke="var(--color-primary)" stroke-width="4"
+                stroke-linecap="round" stroke-dasharray="${dash} ${C}"
+                transform="rotate(-90 40 40)" />
+      </svg>
+      <div class="${logoClass}">${logoSvg}</div>
+    </div>
+  `;
+}
+
+/**
+ * 渲染 Thinking 头部（M3 Circular Progress 环绕 Logo，Logo 同步旋转）
  */
 function renderThinkingHeader(currentStatus) {
-  const useOpenAI = shouldUseOpenAILogo();
-  if (useOpenAI) {
-    // M3 Expressive 异形加载指示器 + OpenAI Logo 叠加
-    return `
-      <div class="thinking-logo thinking-logo--m3" role="img" aria-label="AI 正在思考">
-        ${m3LoaderHTML(64, 'm3LoaderAgent')}
-      </div>
-      <h2 class="generating__title">Agent 正在为你规划</h2>
-      <p class="generating__subtitle shimmer-text" aria-live="polite">${currentStatus}</p>
-    `;
-  }
-  // M3 Expressive 异形加载指示器
   return `
-    <div class="thinking-logo thinking-logo--m3" role="img" aria-label="AI 正在思考">
-      ${m3LoaderHTML(64, 'm3LoaderAgent')}
-    </div>
-    <h2 class="generating__title shimmer-text" aria-live="polite">Thinking</h2>
-    <p class="generating__subtitle">${currentStatus}</p>
+    ${renderM3ProgressLogo(80)}
+    <h2 class="generating__title">Agent 正在为你规划</h2>
+    <p class="generating__subtitle shimmer-text" aria-live="polite">${currentStatus}</p>
   `;
 }
 

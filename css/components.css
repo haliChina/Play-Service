@@ -79,6 +79,48 @@
   transform: translateX(4px);
 }
 
+/* M3 Tonal Button（次级填充按钮，M3 secondaryContainer 配色） */
+.btn--tonal {
+  background: var(--color-secondary-container);
+  color: var(--color-on-secondary-container);
+  border-color: transparent;
+}
+
+.btn--tonal:hover {
+  background: var(--color-secondary-container-soft);
+  box-shadow: var(--shadow-sm);
+}
+
+/* M3 State Layer（hover/active 半透明叠加，M3 核心交互反馈） */
+.btn--primary:hover {
+  background-image: linear-gradient(rgba(255,255,255,0.08), rgba(255,255,255,0.08));
+}
+
+.btn--tonal:hover,
+.btn--ghost:hover {
+  background-image: linear-gradient(rgba(0,0,0,0.06), rgba(0,0,0,0.06));
+}
+
+/* M3 Ripple 涟漪效果（伪元素实现，无需 JS） */
+.btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, currentColor 0%, transparent 60%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-short) var(--ease-out);
+}
+
+.btn:active::after {
+  opacity: 0.12;
+}
+
 /* ═══ 天气卡片 ═══ */
 .weather-card {
   position: relative;
@@ -421,6 +463,7 @@
 .tag-chip:hover {
   border-color: var(--color-primary-soft);
   color: var(--color-primary);
+  background: var(--color-surface-container);
 }
 
 .tag-chip__icon {
@@ -428,16 +471,17 @@
   height: 16px;
 }
 
+/* M3 Filter Chip：选中态用 secondaryContainer tonal 填充（非 primary 实色） */
 .tag-chip.is-selected {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--color-text-inverse);
+  background: var(--color-secondary-container);
+  border-color: transparent;
+  color: var(--color-on-secondary-container);
   transform: scale(1.05);
-  box-shadow: var(--shadow-warm);
+  box-shadow: var(--shadow-xs);
 }
 
 .tag-chip.is-selected .tag-chip__icon {
-  color: var(--color-text-inverse);
+  color: var(--color-on-secondary-container);
 }
 
 .tag-cloud {
@@ -2547,8 +2591,8 @@
 }
 
 .tag-chip.is-selected {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
+  background: var(--color-secondary-container);
+  border-color: transparent;
 }
 
 /* ── 输入框 M3 风格（Outlined Text Field）── */
@@ -2845,13 +2889,13 @@
   to { transform: rotate(360deg); }
 }
 
-/* ── Shimmer 文字光辉效果 ── */
+/* ── Shimmer 文字光辉效果（黑→蓝高对比渐变） ── */
 .shimmer-text {
   background: linear-gradient(
     90deg,
     var(--color-text) 0%,
     var(--color-text) 35%,
-    var(--color-primary) 50%,
+    var(--color-accent) 50%,
     var(--color-text) 65%,
     var(--color-text) 100%
   );
@@ -2868,22 +2912,57 @@
   100% { background-position: -200% 0; }
 }
 
-/* M3 Expressive 异形加载指示器容器 */
-.thinking-logo--m3 {
-  display: flex;
+/* M3 Circular Progress + Logo 组件
+   纯 SVG 实现：圆头 stroke 缺口进度环环绕中央 Logo，环和 Logo 同步旋转 */
+.m3-progress-logo {
+  position: relative;
+  width: var(--m3-size, 80px);
+  height: var(--m3-size, 80px);
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 16px;
 }
 
-.m3-loader {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.m3-progress-logo__ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  animation: m3-progress-spin 1.6s var(--ease-standard) infinite;
 }
 
-.m3-loader canvas {
-  display: block;
+/* 进度环的指示弧（第二层 circle）跟随旋转 */
+.m3-progress-logo__ring circle:last-child {
+  animation: m3-progress-arc 2.4s var(--ease-standard) infinite;
+  transform-origin: 40px 40px;
+}
+
+.m3-progress-logo__icon {
+  position: relative;
+  z-index: 1;
+  color: var(--color-primary);
+  animation: m3-logo-spin 2.4s var(--ease-standard) infinite;
+}
+
+.m3-progress-logo__icon--openai {
+  color: #10A37F;
+}
+
+@keyframes m3-progress-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes m3-progress-arc {
+  0% { stroke-dashoffset: 0; }
+  50% { transform: rotate(135deg); }
+  100% { transform: rotate(360deg); stroke-dashoffset: 0; }
+}
+
+@keyframes m3-logo-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* M3 Linear Progress（AI 步骤进度条） */
@@ -2926,7 +3005,10 @@
   .thinking-logo--openai .thinking-logo__ring,
   .thinking-logo--openai::before,
   .shimmer-text,
-  .m3-linear-progress--indeterminate .m3-linear-progress__indicator {
+  .m3-linear-progress--indeterminate .m3-linear-progress__indicator,
+  .m3-progress-logo__ring,
+  .m3-progress-logo__ring circle:last-child,
+  .m3-progress-logo__icon {
     animation: none;
   }
   .shimmer-text {
