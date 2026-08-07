@@ -210,15 +210,22 @@ const TOOL_REGISTRY = {
         // 视觉理解开启且有图片时，附上图片URL
         if (visionEnabled && p.photos && p.photos.length > 0) {
           item.photo = p.photos[0];
+          if (p.photoMeta) item.photoMeta = p.photoMeta;
         }
         return item;
       });
 
       // 收集图片列表（供 Agent 主循环以 vision 格式发给模型）
       const images = visionEnabled
-        ? top.filter(p => p.photos && p.photos.length > 0)
+        ? top.filter(p => p.visionPhotoUrl && /^https?:\/\//i.test(p.visionPhotoUrl))
             .slice(0, 6)
-            .map(p => ({ name: p.name, url: p.photos[0] }))
+            .map(p => ({
+              name: p.name,
+              url: p.visionPhotoUrl,
+              source: p.photoMeta?.source || '',
+              title: p.photoMeta?.title || '',
+              query: p.photoMeta?.query || ''
+            }))
         : [];
 
       return {

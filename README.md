@@ -21,7 +21,9 @@
 - **一句话理解需求** — 说人话就行。"带娃放电"能猜到是要去户外儿童友好的地方
 - **真实地图 POI 搜索** — 基于 OpenStreetMap 数据，搜方圆 8 公里内的公园、博物馆、湖边等真实地点
 - **多维匹配打分** — 结合距离、兴趣匹配度、天气（下雨不推户外）、交通、预算，算出最适合你的
-- **高清配图** — 从 360 图片和必应自动抓取对应地点的实景图，过滤水印来源
+- **模型品牌 Logo** — 自动识别 OpenAI、Claude、DeepSeek、Qwen、豆包、智谱 GLM、Kimi、阶跃星辰、Xiaomi MiMo 等模型，使用本地托管的 [Lobe Icons](https://github.com/lobehub/lobe-icons)（MIT）SVG 资产
+- **严格视觉确认** — 展示 URL 与远端视觉 URL 分离，图片必须通过“地点场景 + 实体一致性”校验，单个物体/花朵/Logo/地图会被移除
+- **稳定 Agent 轨迹** — 工具步骤增量追加，不重建历史 DOM，最终规划阶段不会重播整段动画
 - **实时天气** — 自动获取当地天气，天气不好不推爬山
 - **灵感预设** — 上班族周末、带娃家庭、大学生探索、外地游客四种场景一键填充
 
@@ -88,7 +90,7 @@ vercel dev
 |------|------|
 | 前端 | 原生 JavaScript + CSS（无框架） |
 | 设计 | Material 3 (M3 Expressive) 组件 + Vercel 配色（黑白 + #0070f3） |
-| 图标 | M3 Symbols 风格（圆角 rounded） |
+| 图标 | M3 Symbols + [Lobe Icons](https://github.com/lobehub/lobe-icons) 模型品牌 SVG（MIT，本地托管） |
 | 地图数据 | OpenStreetMap / Overpass API / Nominatim |
 | 图片搜索 | 360 图片搜索 + 必应图片 async API + Wikimedia |
 | AI 推荐 | 用户自定义（硅基流动/DeepSeek/智谱等） |

@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "description": "一会去哪儿 · 个性化出游推荐 — 结合天气、兴趣、预算、交通，一键生成专属出游方案",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "vercel dev --listen 8765",
     "start": "vercel dev --listen 8765",
+    "test": "node tests/agent-regression.test.mjs",
     "deploy": "vercel --prod"
   },
   "engines": {

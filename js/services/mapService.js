@@ -937,36 +937,47 @@ export function getNavigateUrl(lat, lng, name, provider = 'amap') {
  * @param {number} lng - 经度（预留）
  * @returns {Promise<string>} 图片URL（通过代理）或空字符串
  */
-async function fetchImageFromSearch(name, lat, lng) {
-  if (!name || name.length < 2) return '';
+async function fetchImageFromSearch(poi) {
+  const name = poi?.name?.trim();
+  if (!name || name.length < 2) return null;
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 12000);
-    const params = new URLSearchParams({ name, lat: lat || '', lng: lng || '' });
+    const params = new URLSearchParams({
+      name,
+      city: poi.cityname || poi.adname || '',
+      address: poi.address || '',
+      type: poi.type || '',
+      lat: poi.lat || '',
+      lng: poi.lng || ''
+    });
     const res = await fetch(`/api/place-image?${params}`, { signal: controller.signal });
     clearTimeout(timeoutId);
-    if (!res.ok) return '';
+    if (!res.ok) return null;
     const data = await res.json();
+    if (!data.url && !data.thumb) return null;
 
-    // 策略1：360图片CDN缩略图（高质量、无水印，分辨率可达800x1067+）
-    // 通过代理加载，避免浏览器 ORB/CORS 跨域阻断
-    if (data.source === '360' && data.thumb) {
-      return `/api/proxy-image?url=${encodeURIComponent(data.thumb)}`;
+    // 展示地址与视觉地址必须分离：远端模型无法读取 /api/proxy-image 这类相对 URL。
+    const remoteUrl = data.thumb || data.url || '';
+    let displayUrl = remoteUrl;
+    if (data.source === '360' && remoteUrl) {
+      displayUrl = `/api/proxy-image?url=${encodeURIComponent(remoteUrl)}`;
+    } else if (!data.thumb && data.url) {
+      displayUrl = `/api/proxy-image?url=${encodeURIComponent(data.url)}`;
     }
 
-    // 策略2：必应高分辨率缩略图（800x600，Bing CDN直连）
-    if (data.thumb) {
-      return data.thumb;
-    }
-
-    // 策略3：通过代理访问原始图片URL（避免防盗链）
-    if (data.url) {
-      return `/api/proxy-image?url=${encodeURIComponent(data.url)}`;
-    }
+    return {
+      displayUrl,
+      visionUrl: /^https?:\/\//i.test(remoteUrl) ? remoteUrl : '',
+      source: data.source || 'search',
+      title: data.title || '',
+      query: data.query || name,
+      confidence: Number(data.confidence) || 0
+    };
   } catch (e) {
     console.warn(`[图片搜索] 获取失败 ${name}:`, e.message);
   }
-  return '';
+  return null;
 }
 
 /**
@@ -976,22 +987,32 @@ async function fetchImageFromSearch(name, lat, lng) {
  * @param {string} name - 景点名
  * @returns {Promise<string>} 图片URL或空字符串
  */
-async function fetchImageFromWiki(name) {
-  if (!name || name.length < 2) return '';
+async function fetchImageFromWiki(poi) {
+  const name = poi?.name?.trim();
+  if (!name || name.length < 2) return null;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 5000);
   try {
-    // 先查 Wikivoyage（旅游条目配图最相关），再查 Wikipedia
+    // 用城市/地址约束搜索，并校验命中的条目标题。不能把“向日葵公园”模糊命中“向日葵”。
+    const locationHint = poi.cityname || poi.adname || (poi.address || '').split(/[·,，]/)[0] || '';
+    const query = [locationHint, name].filter(Boolean).join(' ');
     for (const wiki of ['zh.wikivoyage', 'zh.wikipedia']) {
       try {
-        const url = `https://${wiki}.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch=${encodeURIComponent(name)}&gsrlimit=1&prop=pageimages&pithumbsize=600&piprop=thumbnail&redirects=1`;
+        const url = `https://${wiki}.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrlimit=5&prop=pageimages|info&pithumbsize=600&piprop=thumbnail&inprop=url&redirects=1`;
         const res = await fetch(url, { signal: controller.signal });
         if (!res.ok) continue;
         const data = await res.json();
-        const pages = data?.query?.pages || {};
-        const first = Object.values(pages)[0];
-        if (first && first.thumbnail && first.thumbnail.source) {
-          return first.thumbnail.source;
+        const pages = Object.values(data?.query?.pages || {});
+        const exact = pages.find(page => isRelevantWikiTitle(name, page.title, locationHint));
+        if (exact?.thumbnail?.source) {
+          return {
+            displayUrl: exact.thumbnail.source,
+            visionUrl: exact.thumbnail.source,
+            source: 'wiki',
+            title: exact.title,
+            query,
+            confidence: 100
+          };
         }
       } catch {
         // 单个 wiki 失败继续尝试下一个
@@ -1002,7 +1023,26 @@ async function fetchImageFromWiki(name) {
   } finally {
     clearTimeout(timeoutId);
   }
-  return '';
+  return null;
+}
+
+function normalizePlaceName(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[\s·•()（）\-_—]/g, '')
+    .replace(/(旅游景区|风景名胜区|风景区|景区)$/g, '');
+}
+
+function isRelevantWikiTitle(placeName, title, locationHint = '') {
+  const place = normalizePlaceName(placeName);
+  const page = normalizePlaceName(title);
+  if (!place || !page) return false;
+  // 至少要求完整地点名互相包含；禁止仅因共有“向日葵”等词就命中。
+  if (!(page.includes(place) || place.includes(page))) return false;
+  if (page.length < Math.max(3, Math.ceil(place.length * 0.72))) return false;
+  const location = normalizePlaceName(locationHint).replace(/[省市区县]$/g, '');
+  if (location && page.length > place.length && !page.includes(location) && !place.includes(page)) return false;
+  return true;
 }
 
 /**
@@ -1031,8 +1071,17 @@ function generateStaticMapPreview(lat, lng) {
  * @param {number} limit - 最多处理多少个（默认前15个，即展示的）
  */
 export async function enrichPOIsWithImages(pois, limit = 15) {
+  const candidates = pois.slice(0, limit);
+  // OSM/地图供应商已给出的绝对图片也可直接用于视觉分析，不要因已有 photos 而漏传。
+  for (const poi of candidates) {
+    const existing = poi.photos?.[0];
+    if (existing && /^https?:\/\//i.test(existing) && !poi.visionPhotoUrl) {
+      poi.visionPhotoUrl = existing;
+      poi.photoMeta ||= { source: poi.source || 'map-provider', confidence: 90, isRealPhoto: true };
+    }
+  }
   // 过滤需要获取图片的 POI：有名字、无现有图片即可（兼容 Agent 返回的推荐地点）
-  const toFetch = pois.slice(0, limit).filter(p => p.name && (!p.photos || p.photos.length === 0) && (!p.imageUrl || p.imageUrl === ''));
+  const toFetch = candidates.filter(p => p.name && (!p.photos || p.photos.length === 0) && (!p.imageUrl || p.imageUrl === ''));
   console.log(`[图片增强] 需要获取图片的POI: ${toFetch.length}/${Math.min(pois.length, limit)}`);
 
   // 并发获取，限制并发数为5
@@ -1041,27 +1090,38 @@ export async function enrichPOIsWithImages(pois, limit = 15) {
   for (let i = 0; i < toFetch.length; i += CONCURRENCY) {
     const batch = toFetch.slice(i, i + CONCURRENCY);
     const batchResults = await Promise.all(batch.map(async (poi) => {
-      // 优先从 Wikipedia/Wikivoyage 获取景点准确配图（避免通用图片搜索的错配）
-      const wikiImg = await fetchImageFromWiki(poi.name);
-      if (wikiImg) return { poi, img: wikiImg, isReal: true, source: 'wiki' };
-      // wiki 无图则通过本地API搜索（360/必应图片，搜索词加入城市名提高准确性）
-      const cityName = poi.adname || poi.cityname || '';
-      const searchName = cityName ? `${cityName} ${poi.name}` : poi.name;
-      const img = await fetchImageFromSearch(searchName, poi.lat, poi.lng);
-      if (img) return { poi, img, isReal: true, source: 'search' };
-      // 搜索失败时用地图瓦片作为后备
+      // 百科仅接受地点实体的高置信精确命中；模糊词条不再直接用作配图。
+      const wikiImage = await fetchImageFromWiki(poi);
+      if (wikiImage) return { poi, image: wikiImage, isReal: true };
+      // 通用搜索携带名称、城市、地址和类型，减少同名/单个主体图错配。
+      const searchImage = await fetchImageFromSearch(poi);
+      if (searchImage) return { poi, image: searchImage, isReal: true };
+      // 搜索失败时用地图瓦片作为后备；地图不能作为视觉“实景照片”送给模型。
       const staticMap = generateStaticMapPreview(poi.lat, poi.lng);
-      return { poi, img: staticMap, isReal: false, source: 'map' };
+      return {
+        poi,
+        image: staticMap ? { displayUrl: staticMap, visionUrl: '', source: 'map', confidence: 0 } : null,
+        isReal: false
+      };
     }));
     results.push(...batchResults);
   }
 
-  // 将获取到的图片写回 POI 对象
+  // 将展示 URL、远端视觉 URL 和来源元数据分别写回 POI。
   let successCount = 0;
   let realPhotoCount = 0;
-  for (const { poi, img, isReal } of results) {
-    if (img) {
-      poi.photos = [img];
+  for (const { poi, image, isReal } of results) {
+    if (image?.displayUrl) {
+      poi.photos = [image.displayUrl];
+      poi.photoMeta = {
+        source: image.source,
+        title: image.title || '',
+        query: image.query || poi.name,
+        confidence: image.confidence || 0,
+        isRealPhoto: isReal
+      };
+      if (image.visionUrl) poi.visionPhotoUrl = image.visionUrl;
+      else delete poi.visionPhotoUrl;
       successCount++;
       if (isReal) realPhotoCount++;
     }

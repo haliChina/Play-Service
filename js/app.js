@@ -8,7 +8,7 @@ import {
   renderHeader, renderHero, renderPreferences, renderGenerating,
   renderResults, renderFooter, renderWeatherCard,
   renderNearbyResults, renderSettingsModal, renderAIProcessing, renderRealResults,
-  renderInspirationPanel, renderAgentProcessing, renderAgentResults
+  renderInspirationPanel, renderAgentProcessing, renderAgentResults, renderAgentStep
 } from './modules/renderer.js';
 import {
   initCityPicker, updateWeatherTint, showToast,
@@ -552,14 +552,33 @@ async function runAIFlow(needs, address) {
   let currentStatus = 'Agent 启动中…';
 
   const updateAgentView = () => {
-    main.innerHTML = renderAgentProcessing(agentSteps, currentStatus);
-    // 自动滚动到 Agent 轨迹底部，展示最新步骤
     const trace = document.getElementById('agentTrace');
-    if (trace) {
-      requestAnimationFrame(() => {
-        trace.scrollTop = trace.scrollHeight;
-      });
+    if (!trace) {
+      // 仅在初次进入 Agent 视图时创建整体 DOM；后续禁止重建历史步骤。
+      main.innerHTML = renderAgentProcessing(agentSteps, currentStatus);
+      return;
     }
+    const statusEl = document.getElementById('agentCurrentStatus');
+    if (statusEl) statusEl.textContent = currentStatus;
+  };
+
+  const appendAgentStep = (step) => {
+    const trace = document.getElementById('agentTrace');
+    if (!trace) {
+      updateAgentView();
+      return;
+    }
+    trace.insertAdjacentHTML('beforeend', renderAgentStep(step));
+    requestAnimationFrame(() => {
+      trace.scrollTop = trace.scrollHeight;
+    });
+  };
+
+  const resetAgentTrace = () => {
+    const trace = document.getElementById('agentTrace');
+    if (trace) trace.replaceChildren();
+    const statusEl = document.getElementById('agentCurrentStatus');
+    if (statusEl) statusEl.textContent = currentStatus;
   };
 
   // 流式增量 DOM 更新：只改 <pre> 文本节点，避免整树 innerHTML 重建导致页面抽搐
@@ -621,6 +640,7 @@ async function runAIFlow(needs, address) {
       else if (step.type === 'stream') currentStatus = '正在生成攻略…';
       else if (step.type === 'final') currentStatus = '生成完成';
       updateAgentView();
+      appendAgentStep(step);
     };
 
     if (useLLM) {
@@ -630,8 +650,10 @@ async function runAIFlow(needs, address) {
         result = await runAgent(needs, context, onStep);
       } catch (e) {
         console.warn('[Agent] LLM 失败，降级到本地 Agent:', e.message);
-        // 清空已有步骤重新开始
+        // LLM 失败后清空已有步骤与对应 DOM，再开始本地 Agent，避免状态混杂。
         agentSteps.length = 0;
+        currentStatus = 'LLM 不可用，已切换本地 Agent…';
+        resetAgentTrace();
         result = await runLocalAgent(needs, context, onStep);
       }
     } else {
@@ -685,7 +707,7 @@ async function runAIFlow(needs, address) {
           <div class="empty-state">
             <div class="empty-state__icon">${getIcon('compass', 64)}</div>
             <h2 class="empty-state__title">Agent 处理失败</h2>
-            <p class="empty-state__text">${error.message}</p>
+            <p class="empty-state__text" id="agentErrorMessage"></p>
             <div style="display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap">
               <button class="btn btn--ghost" onclick="location.reload()">重新开始</button>
               <button class="btn btn--primary" id="backToHomeFromError">返回重新输入</button>
@@ -694,6 +716,8 @@ async function runAIFlow(needs, address) {
         </div>
       </section>
     `;
+    const errorMessageEl = document.getElementById('agentErrorMessage');
+    if (errorMessageEl) errorMessageEl.textContent = error.message || '未知错误';
     const backBtn = document.getElementById('backToHomeFromError');
     if (backBtn) {
       backBtn.addEventListener('click', () => {

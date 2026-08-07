@@ -89,6 +89,9 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
         """搜索地点图片，返回JSON {url, source, thumb, width, height}"""
         params = urllib.parse.parse_qs(parsed.query)
         name = params.get('name', [''])[0]
+        city = params.get('city', [''])[0]
+        address = params.get('address', [''])[0]
+        poi_type = params.get('type', [''])[0]
         lat = params.get('lat', [''])[0]
         lng = params.get('lng', [''])[0]
 
@@ -96,16 +99,19 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             self._send_json({'url': '', 'source': '', 'thumb': '', 'width': 0, 'height': 0})
             return
 
-        # 检查缓存
-        cache_key = name.strip()
+        # 检查缓存（同名地点按城市/地址隔离）
+        cache_key = '|'.join(v for v in (city, address, name.strip(), poi_type) if v)
         if cache_key in _image_cache:
             entry = _image_cache[cache_key]
             if time.time() - entry['ts'] < _CACHE_TTL:
                 self._send_json(entry['data'])
                 return
 
-        # 策略1：360图片搜索（高质量、无水印、CDN直连）
-        result = self._search_360_images(f'{name} 风景')
+        query_context = ' '.join(v for v in (city, name, poi_type, '景点 实景 环境') if v)
+        fallback_query = ' '.join(v for v in (city, name, '地点 实景 全景') if v)
+
+        # 策略1：携带地点上下文和场景约束，避免“向日葵公园”退化为单朵向日葵
+        result = self._search_360_images(query_context, name)
         if result:
             data = {'url': result.get('img', ''), 'source': '360', 'thumb': result['thumb'],
                     'width': result.get('width', 0), 'height': result.get('height', 0)}
@@ -115,7 +121,7 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         # 策略2：360图片搜索（换关键词）
-        result = self._search_360_images(name)
+        result = self._search_360_images(fallback_query, name)
         if result:
             data = {'url': result.get('img', ''), 'source': '360', 'thumb': result['thumb'],
                     'width': result.get('width', 0), 'height': result.get('height', 0)}
@@ -149,7 +155,7 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
         _image_cache[cache_key] = {'data': data, 'ts': time.time()}
         self._send_json(data)
 
-    def _search_360_images(self, keyword):
+    def _search_360_images(self, keyword, place_name=''):
         """
         360图片搜索API - 高质量中文图片，CDN直连无水印
         返回 {thumb, img, width, height} 或 None
@@ -196,19 +202,31 @@ class CustomHandler(http.server.SimpleHTTPRequestHandler):
                 if any(bd in img_lower or bd in thumb_lower for bd in WATERMARK_DOMAINS):
                     continue
 
-                # 计算来源质量分
+                title = str(item.get('title', '') or item.get('litetitle', ''))
+                subject_only = (re.search(r'图片|壁纸|素材|头像|插画|花语|植物图鉴|png|免抠', title, re.I)
+                                and not re.search(r'公园|景区|景点|广场|园区|游玩|旅游|实景|全景|环境', title))
+                if subject_only:
+                    continue
+
+                # 计算来源与地点语义质量分
                 score = 0
-                if any(gd in img_lower for gd in GOOD_SOURCE_DOMAINS):
-                    score += 100  # 优质来源加分
-                # 360 CDN 缩略图加分（稳定、无防盗链）
+                page_text = f'{title} {item.get("site", "")} {item.get("link", "")}'.lower()
+                if any(gd in img_lower or gd in page_text for gd in GOOD_SOURCE_DOMAINS):
+                    score += 100
+                if place_name and place_name in title:
+                    score += 90
+                if re.search(r'公园|景区|景点|广场|园区|游玩|旅游|实景|全景|环境', title):
+                    score += 25
                 if 'qhimgs' in thumb_lower or 'qihoo' in thumb_lower:
-                    score += 50
+                    score += 20
                 # 更大图片加分
                 if w > 0 and h > 0:
                     score += min(w * h // 10000, 30)  # 最多加30分
-                # 横向图片更适合卡片展示
-                if w > 0 and h > 0 and w > h:
-                    score += 10
+                # 横向环境图更适合景点卡片；竖向主体特写降权
+                if w > 0 and h > 0 and w / h >= 1.25:
+                    score += 15
+                if w > 0 and h > 0 and h > w * 1.25:
+                    score -= 20
 
                 candidates.append({
                     'thumb': thumb,

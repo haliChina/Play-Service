@@ -24,7 +24,7 @@ function buildVisionContent(images) {
     // OpenAI Vision 支持 http(s) URL 或 data:image base64
     parts.push({
       type: 'text',
-      text: `【${img.name || '景点'}】`
+      text: `【${img.name || '景点'}】来源：${img.source || '图片搜索'}${img.title ? `；命中条目：${img.title}` : ''}。请先判断画面是否为可游览的地点场景，并核对与名称是否一致。`
     });
     parts.push({
       type: 'image_url',
@@ -34,6 +34,13 @@ function buildVisionContent(images) {
     if (added >= 4) break; // 最多 4 张，控制成本
   }
   return added > 0 ? parts : null;
+}
+
+function normalizeRecommendationName(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[\s·•()（）\-_—]/g, '')
+    .replace(/(旅游景区|风景名胜区|风景区|景区)$/g, '');
 }
 
 /**
@@ -57,9 +64,16 @@ async function visionConfirmPlan(plan, onStep) {
   }
 
   // 2. 收集有图片的景点
-  const withImages = recs.filter(r => r.photos && r.photos.length > 0);
+  const withImages = recs.filter(r => r.visionPhotoUrl && /^https?:\/\//i.test(r.visionPhotoUrl));
   if (withImages.length === 0) {
-    if (onStep) onStep({ type: 'thinking', content: '视觉确认：未获取到景点图片，跳过' });
+    if (onStep) onStep({ type: 'thinking', content: '视觉确认：没有模型可访问的远端图片，已使用保守无图展示' });
+    // 同源代理图虽然浏览器能展示，但远端视觉模型看不到；视觉模式下不展示未经确认的图片。
+    for (const rec of recs) {
+      if (rec.photos?.length && !rec.visionPhotoUrl && rec.photoMeta?.isRealPhoto !== false) {
+        rec.photos = [];
+        rec.imageMismatch = '图片无法由视觉模型访问并确认';
+      }
+    }
     return plan;
   }
 
@@ -72,8 +86,9 @@ async function visionConfirmPlan(plan, onStep) {
   "confirmations": [
     {
       "name": "景点名（与下方标注一致）",
-      "imageMatch": true|false（图片是否是该景点的真实照片）,
-      "mismatchReason": "不匹配原因（imageMatch 为 false 时填写）,
+      "imageMatch": true|false（图片是否能作为该地点的真实实景配图）,
+      "isPlaceScene": true|false（画面主体是否为可游览空间/建筑/自然环境，而不是单个物体、植物特写、Logo或海报）,
+      "mismatchReason": "不匹配原因（imageMatch 为 false 时填写）",
       "matchScore": 0-100（基于图片观察调整后的匹配度）,
       "reason": "结合图片内容的推荐理由（如环境、风格、出片度等）",
       "highlights": ["图片中观察到的亮点1", "亮点2"],
@@ -82,7 +97,9 @@ async function visionConfirmPlan(plan, onStep) {
   ]
 }
 ⚠️ imageMatch 判断要点（必须严格）：
-- 图片是真实的景点建筑/自然风景照片 → true
+- 图片是真实的景点建筑/自然风景，且能看出可游览空间或环境 → true
+- 只有单株花草、食物、商品、动物或其他孤立主体特写，无法证明是该地点 → false
+- 地点名是“向日葵公园”等专名，但图片只是一朵/一株向日葵 → false
 - 图片是动漫/卡通/Logo/人物/无关内容 → false
 - 图片是地铁线路图/地图/路线图/示意图 → false
 - 图片是文字截图/文档/表格 → false
@@ -92,16 +109,21 @@ async function visionConfirmPlan(plan, onStep) {
   ];
 
   let added = 0;
+  const sentVisionNames = new Set();
   for (const rec of withImages) {
     if (added >= 8) break; // 最多 8 张，控制成本
-    // 校验图片 URL 有效性（必须是 http(s) 且非明显无效）
-    const imgUrl = rec.photos[0];
+    // 视觉模型读取远端绝对 URL；photos[0] 可能是仅供浏览器展示的同源代理地址。
+    const imgUrl = rec.visionPhotoUrl;
     if (!imgUrl || !/^https?:\/\//i.test(imgUrl)) continue;
-    visionContent.push({ type: 'text', text: `【${rec.name}】` });
+    visionContent.push({
+      type: 'text',
+      text: `【${rec.name}】来源：${rec.photoMeta?.source || '图片搜索'}${rec.photoMeta?.title ? `；命中条目：${rec.photoMeta.title}` : ''}`
+    });
     visionContent.push({
       type: 'image_url',
-      image_url: { url: imgUrl, detail: 'low' }
+      image_url: { url: imgUrl, detail: 'high' }
     });
+    sentVisionNames.add(normalizeRecommendationName(rec.name));
     added++;
   }
 
@@ -113,7 +135,7 @@ async function visionConfirmPlan(plan, onStep) {
   try {
     const confirmMessage = await chatRaw(
       [
-        { role: 'system', content: '你是旅游攻略视觉确认助手。根据景点配图，判断图片是否是景点的真实照片，并分析景点特色。重点识别错配图片（动漫/卡通/Logo/地图/路线图/无关内容）。你的输出必须是一个合法 JSON 对象，不要输出任何其他文字。' },
+        { role: 'system', content: '你是严格的旅游攻略视觉确认助手。先判断画面是否为可游览的地点场景，再核对是否与景点名称相符。单个花朵、植物、动物、食物、商品、Logo、地图、人物或海报都不能作为地点实景配图；不确定时必须判 false。你的输出必须是一个合法 JSON 对象，不要输出任何其他文字。' },
         { role: 'user', content: visionContent }
       ],
       { temperature: 0.3, maxTokens: 1500 }
@@ -137,22 +159,31 @@ async function visionConfirmPlan(plan, onStep) {
     // 按景点名合并
     const confirmMap = {};
     for (const c of confirmations) {
-      if (c.name) confirmMap[c.name] = c;
+      if (c.name) confirmMap[normalizeRecommendationName(c.name)] = c;
     }
 
     let updatedCount = 0;
     let removedImageCount = 0;
     for (const rec of recs) {
-      const c = confirmMap[rec.name];
+      const c = confirmMap[normalizeRecommendationName(rec.name)];
+      // 严格门禁：已送检但模型漏答的图片同样不能当作“已视觉确认”。
+      if (!c && sentVisionNames.has(normalizeRecommendationName(rec.name))) {
+        if (rec.photos?.length) rec.photos = [];
+        delete rec.visionPhotoUrl;
+        rec.imageMismatch = '视觉模型未返回该地点的确认结果';
+        removedImageCount++;
+        continue;
+      }
       if (c) {
         // 图片不匹配 → 移除错误图片，避免展示米老鼠/动漫等错配
-        if (c.imageMatch === false) {
+        if (c.imageMatch === false || c.isPlaceScene === false) {
           if (rec.photos && rec.photos.length > 0) {
             rec.photos = [];
+            delete rec.visionPhotoUrl;
             removedImageCount++;
-            console.warn(`[视觉确认] 移除错配图片: ${rec.name} (${c.mismatchReason || '图片与景点不符'})`);
+            console.warn(`[视觉确认] 移除错配图片: ${rec.name} (${c.mismatchReason || (c.isPlaceScene === false ? '图片不是地点场景' : '图片与景点不符')})`);
           }
-          if (c.mismatchReason) rec.imageMismatch = c.mismatchReason;
+          rec.imageMismatch = c.mismatchReason || (c.isPlaceScene === false ? '图片不是可识别的地点实景' : '图片与景点不符');
         } else {
           // 图片匹配，更新推荐信息
           if (typeof c.matchScore === 'number') rec.matchScore = c.matchScore;
@@ -456,23 +487,23 @@ export async function runAgent(userInput, context = {}, onStep = null) {
 
     // 如果没有 tool_calls，说明模型已给出最终答案
     if (!assistantMessage.tool_calls || assistantMessage.tool_calls.length === 0) {
-      report({ type: 'final', content: assistantMessage.content ? '生成完成' : '已完成分析' });
-
       // 解析最终攻略
       let plan = parseAgentPlan(assistantMessage.content, toolCalls, context);
 
-      // 视觉确认：开启视觉理解时，为每个推荐景点配图并发给模型分析确认
+      // 视觉确认属于最终交付流水线的一部分；完成后才能上报 final。
       if (visionEnabled && plan.recommendations && plan.recommendations.length > 0) {
         plan = await visionConfirmPlan(plan, onStep);
       }
 
+      report({ type: 'final', content: assistantMessage.content ? '生成完成' : '已完成分析' });
       return { plan, toolCalls, steps, rawResponse: assistantMessage.content };
     }
 
     // 将 assistant 消息（含 tool_calls）加入对话
     messages.push(assistantMessage);
 
-    // 执行每个工具调用
+    // 执行同一轮的全部工具。协议要求先补齐所有 tool 响应，之后才能追加 user 视觉消息。
+    const pendingVisionImages = [];
     for (const tc of assistantMessage.tool_calls) {
       const toolName = tc.function.name;
       let toolArgs = {};
@@ -507,16 +538,9 @@ export async function runAgent(userInput, context = {}, onStep = null) {
           content: JSON.stringify(resultForModel)
         });
 
-        // 视觉理解：若 search_places 返回了图片，追加一条 user 消息让模型"看图"
+        // 视觉图片暂存；必须等本轮全部 tool_call 都有对应 tool message 后再发送。
         if (visionEnabled && Array.isArray(result.images) && result.images.length > 0) {
-          const visionContent = buildVisionContent(result.images);
-          if (visionContent) {
-            messages.push({ role: 'user', content: visionContent });
-            report({
-              type: 'thinking',
-              content: `已将 ${result.images.length} 张实景图片传给模型进行视觉分析`
-            });
-          }
+          pendingVisionImages.push(...result.images);
         }
       } catch (err) {
         const errMsg = `工具 ${toolName} 执行失败: ${err.message}`;
@@ -527,6 +551,21 @@ export async function runAgent(userInput, context = {}, onStep = null) {
           role: 'tool',
           tool_call_id: tc.id,
           content: JSON.stringify({ error: err.message })
+        });
+      }
+    }
+
+    if (visionEnabled && pendingVisionImages.length > 0) {
+      // 去重并限制单轮图片数量，降低 token 和图像请求成本。
+      const uniqueImages = Array.from(
+        new Map(pendingVisionImages.filter(img => img?.url).map(img => [`${img.name}|${img.url}`, img])).values()
+      ).slice(0, 4);
+      const visionContent = buildVisionContent(uniqueImages);
+      if (visionContent) {
+        messages.push({ role: 'user', content: visionContent });
+        report({
+          type: 'thinking',
+          content: `已将 ${uniqueImages.length} 张实景图片传给模型进行视觉分析`
         });
       }
     }
@@ -550,15 +589,15 @@ export async function runAgent(userInput, context = {}, onStep = null) {
     }
   };
   const finalMessage = await chatRaw(messages, { temperature: 0.4, maxTokens: 2000, onStream: onFinalStream });
-  report({ type: 'final', content: finalMessage.content ? '生成完成' : '已完成' });
 
   let plan = parseAgentPlan(finalMessage.content, toolCalls, context);
 
-  // 视觉确认（强制最终答案路径同样处理）
+  // 视觉确认同样是最终生成阶段的一部分。
   if (visionEnabled && plan.recommendations && plan.recommendations.length > 0) {
     plan = await visionConfirmPlan(plan, onStep);
   }
 
+  report({ type: 'final', content: finalMessage.content ? '生成完成' : '已完成' });
   return { plan, toolCalls, steps, rawResponse: finalMessage.content };
 }
 

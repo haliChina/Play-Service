@@ -2942,12 +2942,18 @@
   position: relative;
   z-index: 1;
   color: var(--color-primary);
-  /* Logo 与环同步匀速旋转 */
-  animation: m3-progress-spin 1.4s linear infinite;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* 中央品牌 Logo 保持可读，只有外环旋转。 */
 }
 
-.m3-progress-logo__icon--openai {
-  color: #10A37F;
+.m3-progress-logo__icon img,
+.m3-progress-logo__icon svg {
+  display: block;
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
 }
 
 @keyframes m3-progress-spin {

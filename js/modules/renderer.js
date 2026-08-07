@@ -4,6 +4,7 @@
 // ============================================
 
 import { getIcon } from './icons.js';
+import { getCurrentModelBrand } from './modelBrands.js';
 import { appState } from './state.js';
 import {
   groupTypes, interestOptions, transportOptions,
@@ -945,7 +946,8 @@ export function renderFooter() {
   return `
     <footer class="site-footer">
       <div class="container">
-        <p>一会去哪儿 · AI个性化出游推荐 · 真实地图数据</p>
+        <p>一会去哪儿 · AI个性化出游推荐 · 真实地图数据 · 模型图标：<a href="https://github.com/lobehub/lobe-icons" target="_blank" rel="noopener">Lobe Icons</a>（MIT）</p>
+        <p class="site-footer__security-note">安全提示：浏览器直连模式会将自定义 API Key 保存在本机浏览器并发送给所填服务商；共享设备请勿保存长期密钥。</p>
       </div>
     </footer>
   `;
@@ -1043,6 +1045,9 @@ export function renderSettingsModal() {
                 <input type="password" id="llmApiKey" class="settings-input"
                        value="${llm.apiKey || ''}"
                        placeholder="填入 API Key 启用 AI 推荐" />
+                <div style="margin-top:6px;font-size:var(--text-tiny);color:var(--color-text-faint);line-height:1.5">
+                  密钥仅保存在当前浏览器的 localStorage，并由浏览器直接发送给你填写的 API 服务商；共享设备请使用短期/限额密钥，使用后及时清除。
+                </div>
               </div>
 
               <div class="settings-field">
@@ -1056,14 +1061,14 @@ export function renderSettingsModal() {
               </div>
 
               <div class="settings-field">
-                <label>视觉理解 <span style="color:var(--color-text-faint);font-weight:normal">（开启后把搜到的图片传给模型分析后再决定推荐）</span></label>
+                <label>视觉理解 <span style="color:var(--color-text-faint);font-weight:normal">（严格校验配图后再展示）</span></label>
                 <label class="settings-checkbox">
                   <input type="checkbox" id="llmVisionSupported" ${llm.visionSupported ? 'checked' : ''} />
                   <span>支持视觉理解（Vision）</span>
                 </label>
                 <div style="margin-top:6px;font-size:var(--text-tiny);color:var(--color-text-faint);line-height:1.5">
-                  勾选后，Agent 搜索 POI 时会获取景点图片，以 <code style="background:var(--color-bg-warm);padding:1px 4px;border-radius:3px;color:var(--color-primary)">image_url</code> 形式传给模型，让模型"看图"分析后再决定推荐。<br>
-                  仅适用于支持 Vision 的模型（如 gpt-4o、gpt-4-vision、qwen-vl-plus 等）。
+                  勾选后，Agent 会把模型可直接访问的远端图片以 <code style="background:var(--color-bg-warm);padding:1px 4px;border-radius:3px;color:var(--color-primary)">image_url</code> 形式传入，并严格判断它是否为该地点的真实环境；单个花朵/物体、Logo、地图、海报及无法确认的图片都会移除。<br>
+                  仅适用于支持 Vision 的模型；建议使用带视觉能力的型号（如 gpt-4o、Claude 3.5/4 Vision、Qwen-VL、GLM-4V 等），普通文本模型请勿勾选。
                 </div>
               </div>
 
@@ -1431,25 +1436,18 @@ const TOOL_LABEL_MAP = {
 };
 
 /**
- * 判断是否使用 OpenAI 风格 logo（模型名含 gpt 或 baseUrl 含 openai）
+ * 返回当前模型的本地品牌图标。无法识别时保留指南针兜底。
  */
-function shouldUseOpenAILogo() {
-  try {
-    const settings = JSON.parse(localStorage.getItem('yihui-settings') || '{}');
-    const llm = settings.llm || {};
-    const model = (llm.model || '').toLowerCase();
-    const baseUrl = (llm.baseUrl || '').toLowerCase();
-    return model.includes('gpt') || baseUrl.includes('openai.com');
-  } catch { return false; }
-}
-
-/**
- * OpenAI 官方 logo SVG（六瓣花朵，来源：github.com/openai/openai-website）
- */
-function getOpenAILogoSVG(size = 64) {
-  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-  <path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.8956zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.079.079 0 0 1-.038-.0517V6.0656a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.451a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/>
-</svg>`;
+function renderCurrentModelLogo(size = 40) {
+  const brand = getCurrentModelBrand();
+  if (!brand.iconUrl) {
+    return { markup: getIcon('compass', size), brand, branded: false };
+  }
+  return {
+    markup: `<img src="${brand.iconUrl}" width="${size}" height="${size}" alt="" decoding="async">`,
+    brand,
+    branded: true
+  };
 }
 
 /**
@@ -1459,17 +1457,16 @@ function getOpenAILogoSVG(size = 64) {
  * 纯 SVG/CSS 实现，无 CDN 依赖，高对比度。
  */
 function renderM3ProgressLogo(size = 80) {
-  const useOpenAI = shouldUseOpenAILogo();
-  const logoSvg = useOpenAI
-    ? getOpenAILogoSVG(40)
-    : getIcon('compass', 40);
-  const logoClass = useOpenAI ? 'm3-progress-logo__icon m3-progress-logo__icon--openai' : 'm3-progress-logo__icon';
+  const { markup: logoSvg, brand, branded } = renderCurrentModelLogo(40);
+  const logoClass = branded
+    ? `m3-progress-logo__icon m3-progress-logo__icon--brand m3-progress-logo__icon--${brand.id}`
+    : 'm3-progress-logo__icon';
   // M3 Circular Progress：圆周 C=2πr，留 25% 缺口
   const r = 34;
   const C = 2 * Math.PI * r;
   const dash = C * 0.75; // 75% 弧 + 25% 缺口
   return `
-    <div class="m3-progress-logo" style="--m3-size:${size}px" role="img" aria-label="AI 正在思考">
+    <div class="m3-progress-logo" style="--m3-size:${size}px" role="img" aria-label="${brand.label} 正在思考">
       <svg class="m3-progress-logo__ring" viewBox="0 0 80 80" fill="none">
         <circle cx="40" cy="40" r="${r}" stroke="var(--color-surface-container-high)" stroke-width="4" />
         <circle cx="40" cy="40" r="${r}" stroke="var(--color-primary)" stroke-width="4"
@@ -1488,7 +1485,7 @@ function renderThinkingHeader(currentStatus) {
   return `
     ${renderM3ProgressLogo(80)}
     <h2 class="generating__title">Agent 正在为你规划</h2>
-    <p class="generating__subtitle shimmer-text" aria-live="polite">${currentStatus}</p>
+    <p class="generating__subtitle shimmer-text" id="agentCurrentStatus" aria-live="polite">${escapeHtml(currentStatus)}</p>
   `;
 }
 
@@ -1513,7 +1510,7 @@ export function renderAgentProcessing(steps = [], currentStatus = 'Agent 启动�
 /**
  * 渲染单个 Agent 步骤（M3Design 风格，带语义化图标）
  */
-function renderAgentStep(step) {
+export function renderAgentStep(step) {
   if (step.type === 'thinking') {
     return `
       <div class="agent-step agent-step--thinking" role="status">

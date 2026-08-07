@@ -35,55 +35,85 @@ const CACHE_TTL = 3600000; // 1小时
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
 
-  const { name, lat, lng } = req.query;
+  const { name, city = '', address = '', type = '', lat, lng } = req.query;
 
   if (!name) {
     return res.status(200).json({ url: '', source: '', thumb: '', width: 0, height: 0 });
   }
 
-  // 检查缓存
-  const cacheKey = name.trim();
+  const normalizedName = name.trim();
+  const locationHint = [city, address].filter(Boolean).join(' ').trim();
+  const queryContext = [city, normalizedName, type, '景点 实景 环境'].filter(Boolean).join(' ');
+
+  // 检查缓存（地点名必须带城市/地址，避免不同城市同名 POI 共用错图）
+  const cacheKey = [city, address, normalizedName, type].filter(Boolean).join('|');
   const cached = _cache.get(cacheKey);
   if (cached && Date.now() - cached.ts < CACHE_TTL) {
     return res.status(200).json(cached.data);
   }
 
-  // 策略0：Wikivoyage/Wikipedia pageimages（知名景点配图最准确，避免动漫/卡通错配）
-  const wikiThumb = await searchWikiImage(name);
-  if (wikiThumb) {
-    const data = { url: wikiThumb, source: 'wiki', thumb: wikiThumb, width: 600, height: 400 };
+  // 策略0：仅采用标题与地点实体高度一致的百科图片。
+  const wikiResult = await searchWikiImage(normalizedName, locationHint);
+  if (wikiResult) {
+    const data = {
+      url: wikiResult.url,
+      source: 'wiki',
+      thumb: wikiResult.url,
+      width: 600,
+      height: 400,
+      title: wikiResult.title,
+      query: wikiResult.query,
+      confidence: 100
+    };
     _cache.set(cacheKey, { data, ts: Date.now() });
     return res.status(200).json(data);
   }
 
-  // 策略1：360图片搜索（高质量、无水印）
-  let result = await search360Images(`${name} 风景`);
+  // 策略1：通用图片搜索必须带地点上下文和“实景环境”约束。
+  let result = await search360Images(queryContext, normalizedName, locationHint);
   if (result) {
-    const data = { url: result.img || '', source: '360', thumb: result.thumb, width: result.width || 0, height: result.height || 0 };
+    const data = {
+      url: result.img || '', source: '360', thumb: result.thumb,
+      width: result.width || 0, height: result.height || 0,
+      title: result.title || '', query: queryContext, confidence: result.score || 0
+    };
     _cache.set(cacheKey, { data, ts: Date.now() });
     return res.status(200).json(data);
   }
 
-  // 策略2：360图片搜索（换关键词）
-  result = await search360Images(name);
+  // 策略2：放宽类型词，但仍保留城市与“公园/景区/地点实景”语义。
+  const fallbackQuery = [city, normalizedName, '地点 实景 全景'].filter(Boolean).join(' ');
+  result = await search360Images(fallbackQuery, normalizedName, locationHint);
   if (result) {
-    const data = { url: result.img || '', source: '360', thumb: result.thumb, width: result.width || 0, height: result.height || 0 };
+    const data = {
+      url: result.img || '', source: '360', thumb: result.thumb,
+      width: result.width || 0, height: result.height || 0,
+      title: result.title || '', query: fallbackQuery, confidence: result.score || 0
+    };
     _cache.set(cacheKey, { data, ts: Date.now() });
     return res.status(200).json(data);
   }
 
   // 策略3：必应图片搜索（高分辨率缩略图 800x600）
-  result = await searchBingImages(`${name} 风景 高清`);
+  result = await searchBingImages(queryContext, normalizedName, locationHint);
   if (result) {
-    const data = { url: result.murl, source: 'bing', thumb: result.thumb, width: 800, height: 600 };
+    const data = {
+      url: result.murl, source: 'bing', thumb: result.thumb,
+      width: 800, height: 600, title: result.title || '',
+      query: queryContext, confidence: result.score || 0
+    };
     _cache.set(cacheKey, { data, ts: Date.now() });
     return res.status(200).json(data);
   }
 
   // 策略4：必应图片搜索（原始搜索词）
-  result = await searchBingImages(`${name} 照片`);
+  result = await searchBingImages(fallbackQuery, normalizedName, locationHint);
   if (result) {
-    const data = { url: result.murl, source: 'bing', thumb: result.thumb, width: 800, height: 600 };
+    const data = {
+      url: result.murl, source: 'bing', thumb: result.thumb,
+      width: 800, height: 600, title: result.title || '',
+      query: fallbackQuery, confidence: result.score || 0
+    };
     _cache.set(cacheKey, { data, ts: Date.now() });
     return res.status(200).json(data);
   }
@@ -98,19 +128,20 @@ export default async function handler(req, res) {
  * 从 Wikivoyage/Wikipedia 获取景点准确配图
  * 知名景点的百科图片准确率远高于通用图片搜索（避免动漫/卡通/无关内容错配）
  */
-async function searchWikiImage(name) {
+async function searchWikiImage(name, locationHint = '') {
+  const query = [locationHint, name].filter(Boolean).join(' ');
   for (const wiki of ['zh.wikivoyage', 'zh.wikipedia']) {
     try {
-      const url = `https://${wiki}.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch=${encodeURIComponent(name)}&gsrlimit=1&prop=pageimages&pithumbsize=600&piprop=thumbnail&redirects=1`;
+      const url = `https://${wiki}.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrlimit=5&prop=pageimages|info&pithumbsize=600&piprop=thumbnail&inprop=url&redirects=1`;
       const response = await fetch(url, {
         headers: { 'User-Agent': 'yihui-qu-na-er/1.0 (tourism app)' },
       });
       if (!response.ok) continue;
       const data = await response.json();
-      const pages = data?.query?.pages || {};
-      const first = Object.values(pages)[0];
-      if (first && first.thumbnail && first.thumbnail.source) {
-        return first.thumbnail.source;
+      const pages = Object.values(data?.query?.pages || {});
+      const exact = pages.find(page => isRelevantPlaceTitle(name, page.title));
+      if (exact?.thumbnail?.source) {
+        return { url: exact.thumbnail.source, title: exact.title, query };
       }
     } catch (e) {
       // 单个 wiki 失败继续尝试下一个
@@ -119,10 +150,25 @@ async function searchWikiImage(name) {
   return null;
 }
 
+function normalizePlaceName(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[\s·•()（）\-_—]/g, '')
+    .replace(/(旅游景区|风景名胜区|风景区|景区)$/g, '');
+}
+
+function isRelevantPlaceTitle(placeName, title) {
+  const place = normalizePlaceName(placeName);
+  const page = normalizePlaceName(title);
+  if (!place || !page) return false;
+  if (!(page.includes(place) || place.includes(page))) return false;
+  return page.length >= Math.max(3, Math.ceil(place.length * 0.72));
+}
+
 /**
  * 360图片搜索API
  */
-async function search360Images(keyword) {
+async function search360Images(keyword, placeName = '', locationHint = '') {
   try {
     const url = `https://image.so.com/j?q=${encodeURIComponent(keyword)}&src=srp&pn=0&sn=30`;
     const response = await fetch(url, {
@@ -153,14 +199,30 @@ async function search360Images(keyword) {
       const thumbLower = thumb.toLowerCase();
       if (WATERMARK_DOMAINS.some(bd => imgLower.includes(bd) || thumbLower.includes(bd))) continue;
 
-      // 计算来源质量分
-      let score = 0;
-      if (GOOD_SOURCE_DOMAINS.some(gd => imgLower.includes(gd))) score += 100;
-      if (thumbLower.includes('qhimgs') || thumbLower.includes('qihoo')) score += 50;
-      if (w > 0 && h > 0) score += Math.min(Math.floor(w * h / 10000), 30);
-      if (w > 0 && h > 0 && w > h) score += 10;
+      const title = String(item.title || item.litetitle || '');
+      const pageText = `${title} ${item.site || ''} ${item.link || ''}`.toLowerCase();
+      const normalizedPlace = normalizePlaceName(placeName);
+      const normalizedTitle = normalizePlaceName(title);
+      const locationToken = normalizePlaceName(locationHint).replace(/[省市区县].*$/g, '');
 
-      candidates.push({ thumb, img, width: w, height: h, score });
+      // 纯主体图/素材图的标题风险高：例如“向日葵图片、花朵特写”。
+      const subjectOnly = /图片|壁纸|素材|头像|插画|花语|植物图鉴|png|免抠/i.test(title)
+        && !/公园|景区|景点|广场|园区|游玩|旅游|实景|全景|环境/i.test(title);
+      if (subjectOnly) continue;
+
+      // 计算来源与语义质量分
+      let score = 0;
+      if (GOOD_SOURCE_DOMAINS.some(gd => imgLower.includes(gd) || pageText.includes(gd))) score += 100;
+      if (normalizedPlace && normalizedTitle.includes(normalizedPlace)) score += 90;
+      else if (placeName && title.includes(placeName)) score += 70;
+      if (/公园|景区|景点|广场|园区|游玩|旅游|实景|全景|环境/.test(title)) score += 25;
+      if (locationToken && pageText.includes(locationToken)) score += 20;
+      if (thumbLower.includes('qhimgs') || thumbLower.includes('qihoo')) score += 20;
+      if (w > 0 && h > 0) score += Math.min(Math.floor(w * h / 10000), 30);
+      if (w > 0 && h > 0 && w / h >= 1.25) score += 15;
+      if (w > 0 && h > 0 && h > w * 1.25) score -= 20;
+
+      candidates.push({ thumb, img, width: w, height: h, title, score });
     }
 
     if (!candidates.length) return null;
@@ -168,7 +230,14 @@ async function search360Images(keyword) {
     // 按分数排序，选择最佳候选
     candidates.sort((a, b) => b.score - a.score);
     const best = candidates[0];
-    return { thumb: best.thumb, img: best.img, width: best.width, height: best.height };
+    return {
+      thumb: best.thumb,
+      img: best.img,
+      width: best.width,
+      height: best.height,
+      title: best.title,
+      score: best.score
+    };
   } catch (e) {
     console.error('[360图片] 搜索失败:', e.message);
   }
