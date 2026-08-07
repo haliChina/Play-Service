@@ -972,42 +972,6 @@ export function renderSettingsModal() {
           </div>
           <div class="settings-modal__body">
 
-            <!-- PigCode 低价 GPT-5.5 决策说明 -->
-            <div class="settings-section settings-section--info settings-section--highlight">
-              <div class="settings-section__title">
-                ${getIcon('sparkles', 18)}
-                <span>PigCode 低价 GPT-5.5 决策 · 可选配置</span>
-              </div>
-              <p class="settings-section__desc">
-                <strong>使用 PigCode 低价 GPT-5.5 决策模型，配置自定义 API 后即可启用 AI 智能推荐。</strong><br>
-                默认使用 OpenStreetMap 免费地图 + 本地规则引擎 + wttr.in 实时天气，全部免费开箱即用。<br>
-                下方可配置自定义 API（遵循 OpenAI 协议）启用更强模型，或配置地图/天气 Key 获得更精准数据。
-              </p>
-              <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-                <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;background:var(--color-accent-soft);color:var(--color-accent);font-size:var(--text-tiny)">
-                  ${getIcon('check', 12)} AI智能解析
-                </span>
-                <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;background:var(--color-accent-soft);color:var(--color-accent);font-size:var(--text-tiny)">
-                  ${getIcon('check', 12)} 地图POI搜索
-                </span>
-                <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;background:var(--color-accent-soft);color:var(--color-accent);font-size:var(--text-tiny)">
-                  ${getIcon('check', 12)} 个性化推荐
-                </span>
-                <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;background:var(--color-accent-soft);color:var(--color-accent);font-size:var(--text-tiny)">
-                  ${getIcon('check', 12)} 实时天气
-                </span>
-              </div>
-              <div style="margin-top:12px;padding:10px 12px;border-radius:8px;background:linear-gradient(135deg,#fff7ed,#fef3c7);border:1px solid #fde68a;font-size:var(--text-small)">
-                <strong style="color:#b45309">PigCode · 低价 GPT-5.5 决策</strong><br>
-                <span style="color:#92400e">PigCode 官方站点</span><br>
-                <a href="https://cdn.pigcode.org" target="_blank" rel="noopener"
-                   style="display:inline-flex;align-items:center;gap:4px;margin-top:6px;padding:6px 14px;border-radius:8px;background:#C65D3A;color:#fff;text-decoration:none;font-weight:600;font-size:var(--text-small)">
-                  ${getIcon('external', 14)}
-                  <span>访问 PigCode</span>
-                </a>
-              </div>
-            </div>
-
             <!-- 大模型配置（自定义 OpenAI 协议） -->
             <div class="settings-section">
               <div class="settings-section__title">
@@ -1015,7 +979,7 @@ export function renderSettingsModal() {
                 <span>大模型 API（自定义）</span>
               </div>
               <p class="settings-section__desc">
-                使用 PigCode 低价 GPT-5.5 决策等任意兼容 OpenAI 协议的模型，配置 API Key 后启用 AI 智能推荐。<br>
+                使用任意兼容 OpenAI 协议的模型，配置 API Key 后启用 AI 智能推荐。<br>
                 <strong>留空则使用本地规则引擎</strong>，仍可正常生成方案。
               </p>
 
@@ -1089,10 +1053,6 @@ export function renderSettingsModal() {
 
               <div class="settings-field__actions">
                 <button class="btn btn--ghost btn--sm" id="llmTestBtn">测试连接</button>
-                <a class="settings-help-link" id="llmHelpLink" href="https://cdn.pigcode.org" target="_blank" rel="noopener">
-                  ${getIcon('external', 14)}
-                  <span>访问 PigCode 获取 Key</span>
-                </a>
               </div>
               <div class="settings-test-result" id="llmTestResult"></div>
             </div>
